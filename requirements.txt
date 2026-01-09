@@ -1,0 +1,6 @@
+google-genai==1.56.0
+pydantic==2.11.7
+numpy
+pillow~=11.1.0
+jupyter
+python-dotenv
