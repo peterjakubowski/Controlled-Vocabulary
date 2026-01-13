@@ -4,3 +4,5 @@ numpy
 pillow~=11.1.0
 jupyter
 python-dotenv
+chromadb
+pandas
