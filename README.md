@@ -10,7 +10,7 @@ Most commercial Computer Vision models are trained on datasets that are either t
 
 * **COCO**: Limited to ~80 object classes (e.g., "Car," "Person").
 * **ImageNet**: Noun-heavy and biology-skewed (great for dog breeds, poor for abstract concepts).
-* ***LVMs (Large Vision Models)**: Models like GPT-4V or Gemini Vision offer "Open Vocabulary" capabilities but are prone to "creative interpretation." They might tag a cat as "Feline Companion"—a valid English phrase, but if the controlled vocabulary requires "Domestic Cat," the tag is effectively invalid. This creates a compatibility issue where valid descriptions fail strict metadata validation.
+* **LVMs (Large Vision Models)**: Models like GPT-4V or Gemini Vision offer "Open Vocabulary" capabilities but are prone to "creative interpretation." They might tag a cat as "Feline Companion"—a valid English phrase, but if the controlled vocabulary requires "Domestic Cat," the tag is effectively invalid. This creates a compatibility issue where valid descriptions fail strict metadata validation.
 
 ## The Solution: Constrained Decoding with LLMs
 
