@@ -39,6 +39,7 @@ def app():
             img = img.resize(size=(int(w // resize_factor), int(h // resize_factor)))
             st.image(img)
             image_caption = generate_image_caption(image=img)
+            st.write(image_caption.caption)
             st.session_state['text_input'] = image_caption.caption
 
     if text_input := st.session_state.get('text_input'):
@@ -50,11 +51,11 @@ def app():
             columns=[DataColumns.CONCEPT.value, DataColumns.COUNT.value, DataColumns.DEFINITION.value]
         )
         # display the relevant query results
-        st.subheader("Broad concepts")
+        st.subheader("Relevant concepts")
         st.dataframe(df)
         #
         response = classify_media_topics(
-            content=text_input if toggle == InputType.TEXT.value else img,
+            content=text_input,
             response_schema=load_json_response_schema(df[DataColumns.CONCEPT.value].to_list()),
             vocabulary_json=df[[DataColumns.CONCEPT.value, DataColumns.DEFINITION.value]].to_json(orient="records")
         )
