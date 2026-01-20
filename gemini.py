@@ -3,6 +3,8 @@ from google import genai
 import os
 from PIL.Image import Image
 from models import CaptionResponse
+from media_topics import broad_topics_json
+from streamlit import cache_data
 
 load_dotenv()
 
@@ -59,13 +61,14 @@ def load_json_response_schema(concepts: list[str]) -> dict:
 
 
 # Function to classify media topics using GenAI
-def classify_media_topics(content: str | Image, response_schema: dict, vocabulary_json: str) -> genai.types.GenerateContentResponse:
+@cache_data(show_spinner=False, ttl=3600)
+def classify_media_topics(content: str, response_schema: dict, vocabulary_json: str) -> genai.types.GenerateContentResponse:
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=[content],
         config=genai.types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION_CLASSIFY.format(vocabulary_json=vocabulary_json),
-            temperature=1.0,
+            temperature=0.2,
             response_mime_type="application/json",
             response_schema=response_schema,
             thinking_config=genai.types.ThinkingConfig(
@@ -76,12 +79,13 @@ def classify_media_topics(content: str | Image, response_schema: dict, vocabular
     return response
 
 
+@cache_data(show_spinner=False, ttl=3600)
 def generate_image_caption(image: Image):
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=["Write an exhaustive caption for this image", image],
         config=genai.types.GenerateContentConfig(
-            system_instruction=SYSTEM_INSTRUCTION_DESCRIBE,
+            system_instruction=SYSTEM_INSTRUCTION_DESCRIBE.format(broad_level_vocabulary=broad_topics_json),
             response_mime_type="application/json",
             response_json_schema=CaptionResponse.model_json_schema(),
         )
