@@ -31,6 +31,18 @@ def download_mediatopics_json():
         print(f"Error writing to file: {e}")
 
 
+def format_broad_topics():
+    concepts_dict = {concept['qcode']: concept for concept in media_topics['conceptSet'] if
+                     'retired' not in concept}
+    res = {}
+    for broad_topic_uri in media_topics.get('hasTopConcept', []):
+        qcode = f"medtop:{broad_topic_uri.split('/')[-1]}"
+        concept = concepts_dict.get(qcode, {})
+        res[concept.get('prefLabel', {}).get('en-US')] = concept.get('definition', {}).get('en-US')
+
+    return json.dumps(res)
+
+
 # Download the Media Topics JSON file if it doesn't exist
 if not os.path.exists(MEDIATOPICS_PATH):
     print("Downloading Media Topics Controlled Vocabulary from IPTC web")
@@ -38,3 +50,4 @@ if not os.path.exists(MEDIATOPICS_PATH):
 # Load the Media Topics JSON file
 with open(MEDIATOPICS_PATH, "r") as file:
     media_topics = json.load(file)
+    broad_topics_json = format_broad_topics()
