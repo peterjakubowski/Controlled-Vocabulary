@@ -14,9 +14,10 @@ GOOGLE_AI_API_KEY = os.getenv("GOOGLE_AI_API_KEY")
 # Initialize the GenAI client
 client = genai.Client(api_key=GOOGLE_AI_API_KEY)
 
-SYSTEM_INSTRUCTION_CLASSIFY = """"# Instructions
-* Label text with all relevant concepts from the IPTC Media Topics Controlled Vocabulary. 
-* Respond with a JSON object containing an array of keywords from the defined vocabulary. 
+SYSTEM_INSTRUCTION_CLASSIFY = """"# Role
+* You are an expert digital asset librarian specializing in the IPTC Media Topics Controlled Vocabulary.
+# Rules
+* Given content, respond with a JSON object containing a list of all relevant keywords from the defined vocabulary. 
 # Vocabulary
 {vocabulary_json}
 """
@@ -24,8 +25,8 @@ SYSTEM_INSTRUCTION_CLASSIFY = """"# Instructions
 SYSTEM_INSTRUCTION_DESCRIBE = """# Role
 * You are an expert digital asset librarian specializing in the IPTC Media Topics Controlled Vocabulary.
 # Rules
-* Given an image, you generate a detailed description of everything that you see.
-* You should adhere to the concepts as defined in the vocabulary.
+* Given an image, you generate a detailed semantic description of everything that you see.
+* You must adhere to the concepts as defined in the vocabulary.
 # Broad Level Vocabulary Concepts
 {broad_level_vocabulary} 
 """
@@ -64,15 +65,15 @@ def load_json_response_schema(concepts: list[str]) -> dict:
 @cache_data(show_spinner=False, ttl=3600)
 def classify_media_topics(content: str, response_schema: dict, vocabulary_json: str) -> genai.types.GenerateContentResponse:
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3-flash-preview",
         contents=[content],
         config=genai.types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION_CLASSIFY.format(vocabulary_json=vocabulary_json),
-            temperature=0.2,
+            temperature=1.0,
             response_mime_type="application/json",
             response_schema=response_schema,
             thinking_config=genai.types.ThinkingConfig(
-                thinking_budget=0
+                thinking_budget=-1
             )
         )
     )
@@ -82,8 +83,8 @@ def classify_media_topics(content: str, response_schema: dict, vocabulary_json: 
 @cache_data(show_spinner=False, ttl=3600)
 def generate_image_caption(image: Image):
     response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=["Write an exhaustive caption for this image", image],
+        model='gemini-3-flash-preview',
+        contents=[image],
         config=genai.types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION_DESCRIBE.format(broad_level_vocabulary=broad_topics_json),
             response_mime_type="application/json",
