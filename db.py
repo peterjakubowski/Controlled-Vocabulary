@@ -35,7 +35,7 @@ def chunking_strategy(text_to_chunk: str, chunk_size: int) -> list[str]:
     return res
 
 
-def process_query(results):
+def process_query(results) -> list[list[str]]:
     results_map = {}
     counter = Counter()
     for concept, definition in results:
@@ -43,7 +43,7 @@ def process_query(results):
             results_map[concept] = definition
         counter[concept] += 1
     res = []
-    for concept, count in counter.most_common(25):
+    for concept, count in counter.most_common(50):
         res.append([concept, count, results_map[concept]])
 
     return res
@@ -98,13 +98,17 @@ class Database:
 
         return path
 
-    def query(self, query_texts: str):
+    def query(self, query_texts: str) -> list[list[str]] | None:
         chunks = chunking_strategy(query_texts, chunk_size=15)
-        query_results = self.collection.query(query_texts=chunks, n_results=10)
-        results = []
-        for medtop_id in query_results.get('ids')[0]:
-            results.extend(self.walk_concept_hierarchy(start_qcode=medtop_id))
-        return process_query(results)
+        if chunks:
+            query_results = self.collection.query(query_texts=chunks, n_results=10)
+            # print(query_results)
+            results = []
+            for id_list in query_results.get('ids', []):
+                for medtop_id in id_list:
+                    results.extend(self.walk_concept_hierarchy(start_qcode=medtop_id))
+            return process_query(results)
+        return None
 
 
 database = Database()
