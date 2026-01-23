@@ -69,14 +69,23 @@ class Database:
         # Our ids are Media Topic's `qcode` and the documents concept definitions.
         ids = []
         documents = []
+        metadatas = []
         for key, val in self.concepts_dict.items():
-            ids.append(key)
-            documents.append(val.get('definition').get('en-US'))
-
+            label = val.get('prefLabel').get('en-US')
+            if label:
+                # add the definition
+                ids.append(key + ":def")
+                documents.append(val.get('definition').get('en-US'))
+                metadatas.append({"medtop_id": key, "type": "definition"})
+                # add the label
+                ids.append(key + ":label")
+                documents.append(label)
+                metadatas.append({"medtop_id": key, "type": "label"})
         # Add Media Topics Vocabulary to Database
         self.collection.upsert(
             ids=ids,
-            documents=documents
+            documents=documents,
+            metadatas=metadatas
         )
 
     def walk_concept_hierarchy(self, start_qcode: str) -> list[list]:
@@ -104,8 +113,9 @@ class Database:
             query_results = self.collection.query(query_texts=chunks, n_results=10)
             # print(query_results)
             results = []
-            for id_list in query_results.get('ids', []):
-                for medtop_id in id_list:
+            for metadata_list in query_results.get('metadatas', []):
+                for metadata in metadata_list:
+                    medtop_id = metadata.get("medtop_id")
                     results.extend(self.walk_concept_hierarchy(start_qcode=medtop_id))
             return process_query(results)
         return None
