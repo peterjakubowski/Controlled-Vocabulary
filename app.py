@@ -4,6 +4,7 @@ import pandas as pd
 from gemini import load_json_response_schema, classify_media_topics, generate_image_caption
 from PIL import Image
 from models import InputType, DataColumns
+from media_topics import media_topics_labels
 
 
 def app():
@@ -69,16 +70,23 @@ def app():
             st.write(f"""**"{df.iloc[0].Concept}"** is the top concept.""")
             st.dataframe(df)
             # classify the text input using the retrieved vocabulary and structured outputs
-            response = classify_media_topics(
+            # keywords = ['environment', 'environmental pollution', 'environmental clean-up',
+            # 'environmental policy', 'government policy', 'politics and government']
+            keywords = classify_media_topics(
                 content=text_input,
                 response_schema=load_json_response_schema(df[DataColumns.CONCEPT.value].to_list()),
                 vocabulary_json=df[[DataColumns.CONCEPT.value, DataColumns.DEFINITION.value]].to_json(orient="records")
             )
-            keywords = response.parsed.get('keywords')
             # display the "auto-tagged" keywords
             st.subheader('AI "auto-tags"')
             st.write(f"""AI tagged the content with {len(keywords)} keywords.""")
-            st.write(pd.DataFrame(response.parsed))
+            options = st.multiselect(
+                label="AI Keywords",
+                label_visibility="hidden",
+                options=media_topics_labels,
+                default=keywords
+            )
+            st.dataframe(options)
         else:
             st.warning("Text input is too short, provide at least 15 words to continue.")
 
