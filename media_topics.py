@@ -50,4 +50,5 @@ if not os.path.exists(MEDIATOPICS_PATH):
 # Load the Media Topics JSON file
 with open(MEDIATOPICS_PATH, "r") as file:
     media_topics = json.load(file)
+    media_topics_labels = [concept.get("prefLabel", {}).get("en-US") for concept in media_topics['conceptSet']]
     broad_topics_json = format_broad_topics()
