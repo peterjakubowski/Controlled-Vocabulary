@@ -17,7 +17,8 @@ client = genai.Client(api_key=GOOGLE_AI_API_KEY)
 SYSTEM_INSTRUCTION_CLASSIFY = """"# Role
 * You are an expert digital asset librarian specializing in the IPTC Media Topics Controlled Vocabulary.
 # Rules
-* Given content, respond with a JSON object containing a list of all relevant keywords from the defined vocabulary. 
+* Given content, respond with a JSON object containing a list of all relevant keywords from the defined vocabulary.
+* Limit your response to 50 keywords. 
 # Vocabulary
 {vocabulary_json}
 """
@@ -63,9 +64,9 @@ def load_json_response_schema(concepts: list[str]) -> dict:
 
 # Function to classify media topics using GenAI
 @cache_data(show_spinner=False, ttl=3600)
-def classify_media_topics(content: str, response_schema: dict, vocabulary_json: str) -> genai.types.GenerateContentResponse:
+def classify_media_topics(content: str, response_schema: dict, vocabulary_json: str) -> list[str]:
     response = client.models.generate_content(
-        model="gemini-3-flash-preview",
+        model="gemini-2.5-flash",
         contents=[content],
         config=genai.types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION_CLASSIFY.format(vocabulary_json=vocabulary_json),
@@ -77,7 +78,7 @@ def classify_media_topics(content: str, response_schema: dict, vocabulary_json: 
             )
         )
     )
-    return response
+    return response.parsed.get('keywords', [])
 
 
 @cache_data(show_spinner=False, ttl=3600)
