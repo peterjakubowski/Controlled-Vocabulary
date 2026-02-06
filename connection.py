@@ -2,9 +2,11 @@ import streamlit as st
 from streamlit.connections import BaseConnection
 import chromadb
 from chromadb.errors import NotFoundError
+import pandas as pd
 from media_topics import media_topics
 from collections import deque, Counter
 from typing import Any
+from models import DataColumns
 
 concepts_dict = {concept['qcode']: concept for concept in media_topics['conceptSet'] if
                  'retired' not in concept}
@@ -107,7 +109,7 @@ class ChromaDatabaseConnection(BaseConnection[chromadb.Client]):
             metadatas=metadatas
         )
 
-    def query(self, query_texts: str, ttl: int = 3600) -> list[list[str]] | None:
+    def query(self, query_texts: str, ttl: int = 3600) -> pd.DataFrame | None:
         @st.cache_data(show_spinner="Running query...", show_time=True, ttl=ttl)
         def _query(query_texts: str):
             chunks = chunking_strategy(query_texts, chunk_size=15)
@@ -119,7 +121,10 @@ class ChromaDatabaseConnection(BaseConnection[chromadb.Client]):
                     for metadata in metadata_list:
                         medtop_id = metadata.get("medtop_id")
                         results.extend(walk_concept_hierarchy(start_qcode=medtop_id))
-                return process_query(results)
+                return pd.DataFrame(
+                    data=process_query(results),
+                    columns=[DataColumns.CONCEPT.value, DataColumns.COUNT.value, DataColumns.DEFINITION.value]
+                )
             return None
         return _query(query_texts)
 
