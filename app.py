@@ -1,7 +1,7 @@
 import streamlit as st
-from db import database
 import pandas as pd
-from gemini import load_json_response_schema, classify_media_topics, generate_image_caption
+from gemini import load_json_response_schema
+from gemini import conn as gemini_conn
 from PIL import Image
 from models import InputType, DataColumns
 from media_topics import media_topics_labels
@@ -48,7 +48,7 @@ def app():
             # display the image
             st.image(img)
             # Generate an image caption
-            image_caption = generate_image_caption(image=img)
+            image_caption = gemini_conn.generate_image_caption(image=img)
             # Display the AI generated caption
             st.subheader("AI generated caption")
             st.write(image_caption.caption)
@@ -57,15 +57,10 @@ def app():
 
     if text_input := st.session_state.get('text_input'):
         # query the db with our text
-        # query_results = database.query(query_texts=text_input)
-        query_results = conn.query(query_texts=text_input)
+        df = conn.query(query_texts=text_input)
 
-        if query_results:
-            # load the results with occurrence counts and definitions
-            df = pd.DataFrame(
-                data=query_results,
-                columns=[DataColumns.CONCEPT.value, DataColumns.COUNT.value, DataColumns.DEFINITION.value]
-            )
+        if isinstance(df, pd.DataFrame):
+
             # display the relevant query results retrieved from the vector db
             st.subheader("Relevant concepts")
             st.write(f"""Retrieved {df.shape[0]} relevant concepts from the vocabulary.""")
@@ -74,21 +69,21 @@ def app():
             # classify the text input using the retrieved vocabulary and structured outputs
             # keywords = ['environment', 'environmental pollution', 'environmental clean-up',
             # 'environmental policy', 'government policy', 'politics and government']
-            # keywords = classify_media_topics(
-            #     content=text_input,
-            #     response_schema=load_json_response_schema(df[DataColumns.CONCEPT.value].to_list()),
-            #     vocabulary_json=df[[DataColumns.CONCEPT.value, DataColumns.DEFINITION.value]].to_json(orient="records")
-            # )
-            # # display the "auto-tagged" keywords
-            # st.subheader('AI "auto-tags"')
-            # st.write(f"""AI tagged the content with {len(keywords)} keywords.""")
-            # options = st.multiselect(
-            #     label="AI Keywords",
-            #     label_visibility="hidden",
-            #     options=media_topics_labels,
-            #     default=keywords
-            # )
-            # st.dataframe(options)
+            keywords = gemini_conn.classify_media_topics(
+                content=text_input,
+                response_schema=load_json_response_schema(df[DataColumns.CONCEPT.value].to_list()),
+                vocabulary_json=df[[DataColumns.CONCEPT.value, DataColumns.DEFINITION.value]].to_json(orient="records")
+            )
+            # display the "auto-tagged" keywords
+            st.subheader('AI "auto-tags"')
+            st.write(f"""AI tagged the content with {len(keywords)} keywords.""")
+            options = st.multiselect(
+                label="AI Keywords",
+                label_visibility="hidden",
+                options=media_topics_labels,
+                default=keywords
+            )
+            st.dataframe(options)
         else:
             st.warning("Text input is too short, provide at least 15 words to continue.")
 
