@@ -2,7 +2,7 @@ google-genai==1.56.0
 streamlit~=1.53.0
 pydantic==2.11.7
 numpy
-pillow>=12.2.0
+pillow~=11.1.0
 jupyter
 python-dotenv
 chromadb
